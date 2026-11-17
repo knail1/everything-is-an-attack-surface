@@ -4,12 +4,10 @@ Agent hijack demo (simple + deterministic).
 
 A tiny AI agent is asked to SUMMARIZE a document. The document hides one
 instruction that tells the agent to run a shell command. The agent obeys.
-That is the whole point: to the model, a command in the data is just a command.
+To the model, a command in the data is just a command.
 
 Deterministic: temperature 0 and a fixed seed, so the same document produces
-the same result on every run.
-
-Needs a local model via Ollama (see README). No internet, no API key, no cloud.
+the same result on every run. Needs a local model via Ollama (see README).
 """
 import os
 import re

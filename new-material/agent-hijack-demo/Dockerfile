@@ -5,5 +5,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 RUN pip install --no-cache-dir "openai>=1.0"
 COPY . /app
 RUN chmod +x entrypoint.sh
-# LLM_BASE_URL is set by docker-compose (points at the ollama service).
 ENTRYPOINT ["./entrypoint.sh"]
