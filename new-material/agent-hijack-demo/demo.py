@@ -17,7 +17,7 @@ import subprocess
 
 from openai import OpenAI
 
-MODEL = os.environ.get("LLM_MODEL", "qwen2.5:7b-instruct")
+MODEL = os.environ.get("LLM_MODEL", "qwen2.5:7b")
 BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1")
 
 client = OpenAI(base_url=BASE_URL, api_key="ollama")  # Ollama ignores the key

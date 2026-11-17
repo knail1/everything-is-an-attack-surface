@@ -1,7 +1,9 @@
 FROM python:3.12-slim
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir "openai>=1.0"
 COPY . /app
-# Talk to Ollama running on the host:
-ENV LLM_BASE_URL=http://host.docker.internal:11434/v1
-CMD ["python", "demo.py"]
+RUN chmod +x entrypoint.sh
+# LLM_BASE_URL is set by docker-compose (points at the ollama service).
+ENTRYPOINT ["./entrypoint.sh"]
