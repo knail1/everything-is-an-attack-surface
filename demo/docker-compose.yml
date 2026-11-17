@@ -1,0 +1,18 @@
+# Declarative alternative to run-container.sh.
+#
+#   docker compose run --rm lab        # build + drop into a shell
+#
+# RUN ONLY on a throwaway x86_64 Linux host. The container is privileged and the
+# eBPF programs it loads affect the HOST kernel globally. See README.md.
+services:
+  lab:
+    build: .
+    image: ebpf-demo-lab
+    container_name: ebpf-demo-lab
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - /sys/kernel/btf/vmlinux:/sys/kernel/btf/vmlinux:ro
+      - /sys/fs/bpf:/sys/fs/bpf:rw
+      - /sys/kernel/debug:/sys/kernel/debug:rw

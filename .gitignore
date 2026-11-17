@@ -1,0 +1,11 @@
+# Built eBPF artifacts / cloned upstream (rebuilt from Dockerfile / bootstrap.sh)
+demo/bad-bpf/
+demo/TripleCross/
+*.o
+.output/
+
+# Vagrant / VM state
+.vagrant/
+
+# OS cruft
+.DS_Store

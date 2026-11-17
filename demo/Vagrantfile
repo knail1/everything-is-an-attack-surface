@@ -1,0 +1,30 @@
+# Vagrantfile — eBPF demo lab (x86_64, Ubuntu 22.04 / kernel 5.15)
+#
+# IMPORTANT (Apple Silicon): VirtualBox + ubuntu/jammy64 is x86_64 only and will
+# NOT boot on M1/M2/M3 Macs. On Apple Silicon, use the cloud VM path in README.md
+# instead (recommended for the conference anyway), or a Parallels/x86-emulation box.
+#
+# On an x86_64 host with VirtualBox installed:
+#   vagrant up          # boots and provisions via bootstrap.sh
+#   vagrant ssh         # into the VM
+#   sudo snapshot ...   # see README for snapshot/reset
+Vagrant.configure("2") do |config|
+  config.vm.box      = "ubuntu/jammy64"   # Ubuntu 22.04 LTS, has kernel BTF
+  config.vm.hostname = "ebpf-demo"
+
+  # No forwarded ports / no bridged networking on purpose: keep the lab isolated.
+  config.vm.provider "virtualbox" do |vb|
+    vb.name   = "ebpf-demo"
+    vb.memory = 2048
+    vb.cpus   = 2
+  end
+
+  # Copy helper scripts in and provision.
+  config.vm.provision "file", source: "scripts", destination: "/tmp/ebpf-scripts"
+  config.vm.provision "shell", inline: <<-SHELL
+    set -e
+    install -d /opt/ebpf-lab
+    cp -r /tmp/ebpf-scripts /opt/ebpf-lab/scripts || true
+  SHELL
+  config.vm.provision "shell", path: "bootstrap.sh"
+end
