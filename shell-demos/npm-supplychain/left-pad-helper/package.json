@@ -1,0 +1,9 @@
+{
+  "name": "left-pad-helper",
+  "version": "1.0.0",
+  "description": "tiny string padding helper",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  }
+}

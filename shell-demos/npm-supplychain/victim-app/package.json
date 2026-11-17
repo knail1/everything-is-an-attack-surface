@@ -1,0 +1,9 @@
+{
+  "name": "victim-app",
+  "version": "1.0.0",
+  "description": "an app that just wanted a string padding helper",
+  "main": "index.js",
+  "dependencies": {
+    "left-pad-helper": "file:../left-pad-helper"
+  }
+}
