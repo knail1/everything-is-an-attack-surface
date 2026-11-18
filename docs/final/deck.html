@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>They're Coming For You First</title>
+<meta name="description" content="Keynote deck (v2) — the attacker thinks like a developer; the AI you build with thinks like an attacker the moment someone poisons its input.">
+<style>
+  :root {
+    --ivory:#FAF9F5; --slate:#141413; --clay:#D97757; --oat:#E3DACC;
+    --olive:#788C5D; --rust:#B04A3F;
+    --gray-150:#F0EEE6; --gray-300:#D1CFC5; --gray-500:#87867F; --gray-700:#3D3D3A;
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --term-bg:#0C0C0F; --term-green:#6ee787; --term-dim:#8b949e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:var(--sans); background:var(--slate); color:var(--ivory);
+    -webkit-font-smoothing:antialiased; scroll-snap-type:y mandatory; overflow-x:hidden;
+  }
+  .slide {
+    width:100vw; height:100vh; scroll-snap-align:start; scroll-snap-stop:always;
+    display:flex; align-items:center; justify-content:center; padding:8vh 7vw; position:relative;
+  }
+  .slide-inner { width:100%; max-width:860px; }
+  .slide.light { background:var(--ivory); color:var(--slate); }
+  .slide.ink   { background:#0C0C0F; color:var(--ivory); }
+
+  .eyebrow {
+    font-family:var(--mono); font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--gray-500); margin-bottom:30px;
+  }
+  .light .eyebrow { color:var(--gray-500); }
+  .clay { color:var(--clay); }
+  .olive{ color:var(--olive); }
+  .rust { color:var(--rust); }
+
+  h1 { font-family:var(--serif); font-weight:500; font-size:clamp(44px,7.5vw,88px); line-height:1.05; letter-spacing:-0.015em; margin-bottom:24px; }
+  h2 { font-family:var(--serif); font-weight:500; font-size:clamp(32px,5vw,56px); line-height:1.12; letter-spacing:-0.01em; }
+  .sub { font-size:clamp(16px,2vw,20px); line-height:1.6; color:var(--gray-300); max-width:620px; margin-top:26px; }
+  .light .sub { color:var(--gray-700); }
+  .mono { font-family:var(--mono); }
+
+  .stat { font-family:var(--serif); font-weight:500; font-size:clamp(84px,17vw,200px); line-height:.9; letter-spacing:-0.03em; }
+  .stat-row { display:flex; gap:clamp(32px,6vw,72px); flex-wrap:wrap; align-items:flex-end; }
+  .stat-sm { font-family:var(--serif); font-size:clamp(52px,9vw,104px); line-height:.9; letter-spacing:-0.02em; }
+  .stat-cap { font-family:var(--mono); font-size:13px; letter-spacing:.06em; color:var(--gray-500); margin-top:16px; max-width:260px; }
+
+  .byline { margin-top:52px; font-family:var(--mono); font-size:13px; color:var(--gray-500); display:flex; gap:26px; flex-wrap:wrap; }
+  .src { margin-top:40px; font-family:var(--mono); font-size:12px; color:var(--gray-500); }
+  .reveal-seq > * { opacity:1; }
+
+  /* terminal */
+  .term {
+    background:var(--term-bg); border:1px solid #23232b; border-radius:12px; overflow:hidden;
+    font-family:var(--mono); font-size:clamp(13px,1.5vw,17px); line-height:1.65; box-shadow:0 30px 80px rgba(0,0,0,.5);
+  }
+  .term-bar { background:#17171c; padding:10px 14px; display:flex; gap:8px; align-items:center; border-bottom:1px solid #23232b; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dot.r{background:#ff5f56;} .dot.y{background:#ffbd2e;} .dot.g{background:#27c93f;}
+  .term-title { margin-left:12px; color:var(--term-dim); font-size:12px; }
+  .term-body { padding:20px 22px; color:#c9d1d9; }
+  .term-body .p { color:var(--term-green); }
+  .term-body .u { color:#79c0ff; }
+  .term-body .d { color:var(--term-dim); }
+  .term-body .x { color:#ff7b72; }
+  .term-body .pwn { color:var(--clay); font-weight:600; }
+  .cursor { display:inline-block; width:9px; height:1.05em; background:var(--term-green); vertical-align:-2px; animation:blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+
+  .acts { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:16px; }
+  .act { border:1px solid #2a2a31; border-radius:12px; padding:22px 20px; background:rgba(255,255,255,.02); }
+  .act .n { font-family:var(--mono); font-size:12px; color:var(--clay); letter-spacing:.1em; }
+  .act .t { font-family:var(--serif); font-size:22px; margin:10px 0 8px; }
+  .act .dsc { font-size:14px; line-height:1.5; color:var(--gray-300); }
+  .act .pct { font-family:var(--mono); font-size:13px; color:var(--olive); margin-top:12px; }
+
+  .rule { width:54px; height:2px; background:var(--clay); margin:0 0 30px; border:0; }
+
+  /* defenses / "build it" slide */
+  .moves { display:flex; flex-direction:column; gap:clamp(10px,1.6vh,18px); margin-top:10px; }
+  .move { display:grid; grid-template-columns:30px 1fr; gap:16px; align-items:baseline; }
+  .move .n { font-family:var(--mono); font-size:14px; color:var(--clay); }
+  .move .t { font-family:var(--serif); font-size:clamp(16px,2vw,22px); line-height:1.2; }
+  .move .t b { color:var(--clay); font-weight:500; }
+  .move .d { font-size:clamp(12px,1.35vw,14px); color:var(--gray-300); line-height:1.4; margin-top:3px; }
+  .move .d code { font-family:var(--mono); font-size:.92em; color:#ffb9a0; }
+  .kicker { margin-top:clamp(14px,2vh,24px); padding-top:14px; border-top:1px solid #2a2a31;
+    font-size:clamp(13px,1.5vw,15.5px); line-height:1.5; color:var(--gray-300); }
+  .kicker b { color:var(--ivory); }
+
+  /* "shut each door" per-demo defenses (light slide) */
+  .doors { display:flex; flex-direction:column; gap:clamp(10px,2vh,20px); margin-top:12px; }
+  .door { display:grid; grid-template-columns:clamp(118px,15vw,182px) 1fr; gap:18px; align-items:baseline;
+    padding-bottom:clamp(10px,2vh,18px); border-bottom:1px solid var(--gray-300); }
+  .door:last-child { border-bottom:0; padding-bottom:0; }
+  .door .lbl { font-family:var(--mono); font-size:clamp(12px,1.4vw,15px); color:var(--clay);
+    text-transform:uppercase; letter-spacing:.05em; }
+  .door .lbl span { display:block; color:var(--gray-500); text-transform:none; letter-spacing:0;
+    font-size:.82em; margin-top:5px; }
+  .door .fix { font-family:var(--serif); font-size:clamp(15px,1.85vw,20px); line-height:1.3; color:var(--gray-700); }
+  .door .fix b { color:var(--olive); font-weight:500; }
+  .door .fix code { font-family:var(--mono); font-size:.8em; background:var(--gray-150); color:#3a2a12;
+    padding:1px 6px; border-radius:5px; }
+
+  #counter { position:fixed; bottom:20px; right:26px; font-family:var(--mono); font-size:12px; color:var(--gray-500); z-index:10; }
+  #bar { position:fixed; top:0; left:0; height:3px; background:var(--clay); width:0; z-index:11; transition:width .25s ease; }
+  .hint { position:fixed; bottom:20px; left:26px; font-family:var(--mono); font-size:11px; color:var(--gray-500); z-index:10; }
+
+  @media (max-width:720px){
+    .acts { grid-template-columns:1fr; }
+    .stat-row { gap:36px; }
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+
+<!-- 1 · Cold open (live-terminal backdrop) -->
+<section class="slide ink" id="s1">
+  <div class="slide-inner">
+    <div class="eyebrow">Cold open — this runs live on the demo machine</div>
+    <div class="term">
+      <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">agent — summarize onboarding.png</span></div>
+      <div class="term-body">
+        <div><span class="u">you ▸</span> summarize this document for me</div>
+        <div class="d">[agent] reading document…</div>
+        <div class="p">[agent] ACTION: run_command: echo "PWNED as $(whoami)@$(hostname)"</div>
+        <div class="pwn">&gt;&gt;&gt; PWNED as root@a3f9c1b20e44</div>
+        <div class="d">[agent] FINAL: This onboarding note covers your first week…</div>
+        <div><span class="p">#</span> <span class="cursor"></span></div>
+      </div>
+    </div>
+    <p class="sub">No greeting. No title. The shell lands before the first word.</p>
+  </div>
+</section>
+
+<!-- 2 · Title -->
+<section class="slide" id="s2">
+  <div class="slide-inner">
+    <hr class="rule">
+    <h1>They're Coming<br>For You <span class="clay">First</span></h1>
+    <p class="sub">The attacker thinks like a developer. The AI you build with thinks like an attacker the moment someone poisons its input.</p>
+    <div class="byline"><span>Keynote v2</span><span>~22 min + live demo</span><span class="mono">@Omer</span></div>
+  </div>
+</section>
+
+<!-- 3 · Reframe -->
+<section class="slide light" id="s3">
+  <div class="slide-inner">
+    <div class="eyebrow">The reframe · a two-way mirror</div>
+    <h2>Attackers read your code like developers.<br><span class="clay">So does your AI.</span></h2>
+    <p class="sub">You read a spec and ask “how do I make this work.” They read your product and ask “what else does it do.” To an LLM agent, a command is a command — whether it comes from you, a document it retrieved, or another agent.</p>
+  </div>
+</section>
+
+<!-- 4 · 94% -->
+<section class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="eyebrow">To an AI, a command is a command</div>
+    <div class="stat clay">94.4%</div>
+    <p class="sub">of 18 tested models executed an attacker’s shell command through direct prompt injection. Five recognized it as malicious in their own reasoning — and ran it anyway.</p>
+    <div class="src">The Dark Side of LLMs · arXiv:2507.06850</div>
+  </div>
+</section>
+
+<!-- 5 · 1 in 5 -->
+<section class="slide light" id="s5">
+  <div class="slide-inner">
+    <div class="eyebrow">You are the target · slopsquatting</div>
+    <div class="stat">1 in 5</div>
+    <p class="sub">AI-suggested packages don’t exist. 576,000 samples across 16 models → 19.7% hallucinated, 205,474 unique fake names your toolchain invents faster than anyone audits.</p>
+    <div class="src">We Have a Package for You! · USENIX Security 2025</div>
+  </div>
+</section>
+
+<!-- 6 · 43% / 8.7% -->
+<section class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="eyebrow">The hallucinations aren’t random</div>
+    <div class="stat-row">
+      <div><div class="stat-sm clay">43%</div><div class="stat-cap">of fake names come back every single time — 10 runs out of 10. The attacker doesn’t guess; they register your AI’s habits.</div></div>
+      <div><div class="stat-sm clay">8.7%</div><div class="stat-cap">of invented Python names are real packages on npm. The trap already exists; the model walks your devs into it.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · XZ -->
+<section class="slide light" id="s7">
+  <div class="slide-inner">
+    <div class="eyebrow">Your product is the weapon</div>
+    <h2>XZ Utils: <span class="rust">2 years</span> of trust.<br>1 backdoor. 10 / 10.</h2>
+    <p class="sub">Not a breach — two years of patient, helpful open-source contributions that earned commit access. When your supply chain is abused, you are not the victim. You are the delivery mechanism.</p>
+  </div>
+</section>
+
+<!-- 8 · .bin -->
+<section class="slide ink" id="s8">
+  <div class="slide-inner">
+    <h2>A poisoned model file is<br>a reverse shell with a <span class="clay">.bin</span> extension.</h2>
+    <p class="sub">Model weights are pickled Python objects. Loading a pickle runs code. And a poisoned retrieved document triggered malware on 83.3% of models while the user got a perfectly correct answer. Full stealth.</p>
+  </div>
+</section>
+
+<!-- 9 · inflation framing -->
+<section class="slide light" id="s9">
+  <div class="slide-inner">
+    <div class="eyebrow">Cyber threat inflation</div>
+    <h2>Months of expert work,<br>now hours. <span class="clay">For pennies.</span></h2>
+    <p class="sub">AI didn’t invent any of this. It collapsed the cost and exploded the scale. For decades defense had one advantage — attacking well was expensive and scarce. AI deleted it.</p>
+    <div class="src">Forewarned is Forearmed · arXiv:2505.12786</div>
+  </div>
+</section>
+
+<!-- 10 · 87% / $8.80 -->
+<section class="slide" id="s10">
+  <div class="slide-inner">
+    <div class="eyebrow">The attacker is now software</div>
+    <div class="stat-row">
+      <div><div class="stat-sm">91</div><div class="stat-cap">lines of code in the agent.</div></div>
+      <div><div class="stat-sm clay">87%</div><div class="stat-cap">of real one-day CVEs exploited on its own. Every smaller model: 0%.</div></div>
+      <div><div class="stat-sm">$8.80</div><div class="stat-cap">per successful exploit — ~2.8× cheaper than a human. It runs 1,000 in parallel.</div></div>
+    </div>
+    <div class="src">LLM Agents Can Autonomously Exploit One-Day Vulnerabilities · arXiv:2404.08144</div>
+  </div>
+</section>
+
+<!-- 11 · DEMO -->
+<section class="slide ink" id="s11">
+  <div class="slide-inner">
+    <div class="eyebrow clay">Live demo · agent hijack · three acts</div>
+    <h2 style="margin-bottom:8px;">A shell each time.</h2>
+    <div class="acts">
+      <div class="act"><div class="n">ACT 1 · DIRECT</div><div class="t">Poisoned document</div><div class="dsc">“Summarize this.” The doc carries a line written for the agent. The shell lands.</div><div class="pct">94.4% of models</div></div>
+      <div class="act"><div class="n">ACT 2 · STEALTH</div><div class="t">RAG backdoor</div><div class="dsc">An innocent question gets a correct answer — and a silent shell underneath.</div><div class="pct">83.3% · 100% stealth</div></div>
+      <div class="act"><div class="n">ACT 3 · TRUST</div><div class="t">Inter-agent</div><div class="dsc">No jailbreak. Agent A passes the command; Agent B runs it because a peer asked.</div><div class="pct">100% of models</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · peer agent -->
+<section class="slide" id="s12">
+  <div class="slide-inner">
+    <div class="eyebrow">The idea to take home</div>
+    <h2>A peer agent’s instruction is <span class="clay">untrusted input</span>.<br>Models obey it <span class="clay">100%</span> of the time.</h2>
+    <p class="sub">We spent twenty years learning to distrust what a user types. We’re about to hand that same trust, unguarded, to the agents we wire together.</p>
+  </div>
+</section>
+
+<!-- 12b · multi-agent defenses (build it) -->
+<section class="slide ink" id="s12b">
+  <div class="slide-inner">
+    <div class="eyebrow clay">Building it · make peers untrusted by design</div>
+    <h2 style="margin-bottom:6px;">You can't <span class="clay">prompt</span> a peer into trust. Wire it.</h2>
+    <div class="moves">
+      <div class="move"><div class="n">01</div><div><div class="t"><b>Least privilege per agent.</b> The planner gets no shell — only a narrow executor, on an allowlist.</div><div class="d">Capability is not permission, applied to the swarm: if a peer can't reach a dangerous tool, a poisoned peer message can't either.</div></div></div>
+      <div class="move"><div class="n">02</div><div><div class="t"><b>Control flow in code, not model handoffs.</b> The orchestrator decides; agents return schema-checked data.</div><div class="d">Handoffs pass <b>data, not instructions</b>. A free-text “A hands off to B” <i>is</i> a command B obeys — that's the worm.</div></div></div>
+      <div class="move"><div class="n">03</div><div><div class="t"><b>Split the control plane from the data plane.</b></div><div class="d">Peer output is tainted data in a walled slot — never concatenated into the system / instruction channel.</div></div></div>
+      <div class="move"><div class="n">04</div><div><div class="t"><b>Policy at the tool boundary.</b> Allowlist, arg + egress checks, human-in-the-loop.</div><div class="d">Enforced no matter which agent asked or why — so convincing an agent isn't enough to fire the tool.</div></div></div>
+      <div class="move"><div class="n">05</div><div><div class="t"><b>Taint-track untrusted content</b> — quarantine it in a tool-less model.</div><div class="d">The research-grade pattern: Willison's Dual-LLM, DeepMind's <code>CaMeL</code>.</div></div></div>
+    </div>
+    <div class="kicker">Orchestrate with code that <b>distrusts by default</b>, and a poisoned agent is contained to bad data — not a command that worms through your swarm.</div>
+  </div>
+</section>
+
+<!-- 12c · how you shut each door -->
+<section class="slide light" id="s12c">
+  <div class="slide-inner">
+    <div class="eyebrow">The turn · how you shut each door</div>
+    <h2 style="margin-bottom:6px;">Same bug, three doors — <span class="clay">close them.</span></h2>
+    <div class="doors">
+      <div class="door"><div class="lbl">Agent hijack<span>untrusted input + a tool</span></div><div class="fix">No raw shell — <b>allowlist tools, least privilege</b>. Treat every document, retrieved file, image, and peer agent as untrusted. Sandbox and human-confirm risky actions.</div></div>
+      <div class="door"><div class="lbl">npm supply chain<span>install-time hook</span></div><div class="fix"><code>npm install --ignore-scripts</code> (set it globally). <b>Verify the package is real</b> before installing. Keep secrets out of the build environment.</div></div>
+      <div class="door"><div class="lbl">Pickle / model files<span>deserializing = executing</span></div><div class="fix"><b>Never unpickle untrusted data</b> — use JSON; use <b>safetensors</b> for model weights. Sign and verify blobs.</div></div>
+    </div>
+    <div class="kicker" style="color:var(--gray-700);border-top-color:var(--gray-300)">The through-line: <b style="color:var(--slate)">untrusted input reaching something that executes.</b> Don't let it — and don't grant a capability you wouldn't hand the most gullible intern.</div>
+  </div>
+</section>
+
+<!-- 13 · capability -->
+<section class="slide light" id="s13">
+  <div class="slide-inner">
+    <div class="eyebrow">The turn · the one new rule</div>
+    <h1 style="font-size:clamp(40px,7vw,80px);">Capability is not<br><span class="clay">permission.</span></h1>
+    <p class="sub">Don’t give an agent a capability you wouldn’t hand to the most gullible intern on your team — because that’s the judgment you’re working with. Untrusted input is untrusted, no matter whose face it wears.</p>
+  </div>
+</section>
+
+<!-- 14 · close -->
+<section class="slide ink" id="s14">
+  <div class="slide-inner">
+    <hr class="rule">
+    <h1>They'll find what your<br>code shouldn't do.<br><span class="clay">Find it first.</span></h1>
+    <div class="byline"><span>Thank you.</span></div>
+  </div>
+</section>
+
+<div id="counter">1 / 16</div>
+<div class="hint">← → / space to navigate</div>
+
+<script>
+  (function(){
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var counter = document.getElementById('counter');
+    var bar = document.getElementById('bar');
+    var current = 0;
+    function go(i){ current = Math.max(0, Math.min(slides.length-1, i)); slides[current].scrollIntoView({behavior:'smooth'}); }
+    document.addEventListener('keydown', function(e){
+      if (e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){ e.preventDefault(); go(current+1); }
+      if (e.key==='ArrowLeft' ||e.key==='ArrowUp'  ||e.key==='PageUp'){ e.preventDefault(); go(current-1); }
+      if (e.key==='Home'){ e.preventDefault(); go(0); }
+      if (e.key==='End'){ e.preventDefault(); go(slides.length-1); }
+    });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){
+          current = slides.indexOf(en.target);
+          counter.textContent = (current+1)+' / '+slides.length;
+          bar.style.width = ((current+1)/slides.length*100)+'%';
+        }
+      });
+    }, {threshold:0.6});
+    slides.forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

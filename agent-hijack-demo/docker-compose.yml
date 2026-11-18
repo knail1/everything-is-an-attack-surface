@@ -1,0 +1,25 @@
+# Fully contained: Ollama + the model + the agent. One command:
+#     docker compose up --build
+# First run downloads the model into a named volume; later runs are instant.
+# Re-run the demo:   docker compose run --rm agent
+# Different model:   LLM_MODEL=qwen2.5:7b docker compose up --build
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  agent:
+    build: .
+    environment:
+      - LLM_BASE_URL=http://ollama:11434/v1
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5:3b}
+    depends_on:
+      ollama:
+        condition: service_healthy
+volumes:
+  ollama-models:

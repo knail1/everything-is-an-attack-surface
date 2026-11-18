@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# agent-attack-lab — the full v2 keynote demo lab, as ONE Docker Compose project.
+#
+# One project name (below) stamps every container with the same
+# com.docker.compose.project label, so all five group under ONE header in Docker
+# Desktop. They are NAMED and (mostly) long-running, so they STAY VISIBLE — the
+# opposite of the earlier `--rm` one-shot runs that vanished instantly.
+#
+# Bring up:   ./up.sh     (build + start + warm, well before stage)
+# Check:      ./status.sh (one glance: ready or not)
+# Kill:       ./down.sh   (single teardown — the only step left for the end)
+#
+# Ports avoid host :5000 (macOS AirPlay/Control Center owns it). Inference stays on
+# the NATIVE host Ollama (GPU); nothing here containerizes a model.
+# ─────────────────────────────────────────────────────────────────────────────
+name: agent-attack-lab
+
+services:
+  # 1 ── Agent-hijack CHAT web app (image drop + OCR). The headline demo.
+  agent-chat:
+    build: ../agent-chat
+    container_name: demo-agent-chat
+    environment:
+      - LLM_BASE_URL=http://host.docker.internal:11434/v1
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5:7b-instruct}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach the NATIVE host Ollama (GPU)
+    ports:
+      - "127.0.0.1:8080:8080"                  # UI → http://localhost:8080 (loopback only)
+    networks: [attacklab]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if b'true' in urllib.request.urlopen('http://localhost:8080/api/health').read() else 1)\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # 2 ── Attacker "inbox": receives the npm supply-chain exfil beacon. Safe/local.
+  collector:
+    build: ../collector
+    container_name: demo-collector
+    ports:
+      - "127.0.0.1:9000:8080"                  # inbox → http://localhost:9000 (loopback only)
+    networks: [attacklab]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/api/loot')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # 3 ── Reverse-shell listener (GNU ncat). Shells from the demos dial in here.
+  listener:
+    build: ./listener
+    container_name: demo-listener
+    networks: [attacklab]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pidof ncat || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # 4 ── Pickle deserialization RCE (Flask). Shell to demo-listener on /load.
+  pickle-rce:
+    build: ../shell-demos/pickle-rce
+    container_name: demo-pickle-rce
+    ports:
+      - "127.0.0.1:5001:5000"                  # host 5000 avoided; loopback only (don't expose RCE on the LAN)
+    networks: [attacklab]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:5000/')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # 5 ── npm supply-chain victim, ARMED IDLE so it is visible before the talk.
+  #      Fire on stage:  docker exec demo-npm-victim npm install
+  #      (postinstall harvests the planted fake secrets → beacons to demo-collector)
+  npm-victim:
+    image: node:20-alpine
+    container_name: demo-npm-victim
+    working_dir: /app/victim-app
+    command: ["tail", "-f", "/dev/null"]       # armed idle; attack triggered via exec
+    environment:
+      - DEMO_LAB=1                             # fail-closed flag: the harvester only runs when this is set
+      - COLLECTOR_URL=http://demo-collector:8080/collect
+      - LISTENER_HOST=demo-listener            # used only by the reverse-shell variant
+      - LISTENER_PORT=4444
+      # Planted FAKE CI/CD secrets (process.env sweep target). None are real.
+      - GITHUB_TOKEN=ghp_FAKEdemo0000000000000000000000000000
+      - NPM_TOKEN=npm_FAKEdemo0000000000000000000000000000
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - STRIPE_SECRET_KEY=sk_test_FAKE_demo_not_a_real_key
+    volumes:
+      - ../shell-demos/npm-supplychain:/app
+      # Planted FAKE secret FILES at the paths real malware sweeps.
+      - ../shell-demos/npm-supplychain/fixtures/npmrc:/root/.npmrc:ro
+      - ../shell-demos/npm-supplychain/fixtures/aws-credentials:/root/.aws/credentials:ro
+      - ../shell-demos/npm-supplychain/fixtures/ssh-id_rsa:/root/.ssh/id_rsa:ro
+      - ../shell-demos/npm-supplychain/fixtures/wallet-seed.txt:/root/.wallet/seed.txt:ro
+    networks: [attacklab]
+    restart: "no"
+
+networks:
+  attacklab:
+    name: attacklab

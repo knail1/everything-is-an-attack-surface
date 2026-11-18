@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operator Run-of-Show</title>
+<meta name="description" content="One-screen operator runbook for the v2 keynote demo lab — prerequisites, launch, and the exact steps to run each demo.">
+<style>
+  :root{
+    --ivory:#F7F4ED; --slate:#20242B; --ink:#2B2F36; --clay:#B6552F; --clay2:#D97757;
+    --olive:#5f7347; --edge:#DED6C6; --card:#FFFFFF; --dim:#7a766c; --code:#f0ece1;
+    --serif:ui-serif,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{background:#e8e3d7;color:var(--ink);font-family:var(--sans);overflow:hidden}
+  .sheet{
+    height:100dvh; width:min(100vw, calc(100dvh*16/9)); margin-inline:auto;
+    padding:12px; display:grid; gap:9px; overflow:hidden; background:#e8e3d7;
+    grid-template-columns:1.02fr 1fr 1fr 1fr;
+    grid-template-rows:auto 0.86fr 1fr 1.16fr;
+    grid-template-areas:
+      "hdr    hdr    hdr    kill"
+      "prereq setup  setup  fixes"
+      "hijack hijack imgup  imgup"
+      "npm    npm    pickle pickle";
+    font-size:clamp(8.5px,0.84vw,11.5px); line-height:1.32;
+  }
+  .cell{background:var(--card);border:1px solid var(--edge);border-radius:9px;padding:9px 11px;
+    display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .cell h2{font-family:var(--mono);font-size:clamp(9px,0.92vw,12px);letter-spacing:.07em;text-transform:uppercase;
+    color:var(--clay);margin-bottom:5px;display:flex;align-items:baseline;gap:6px;flex:none}
+  .cell h2 .tag{font-size:.82em;color:var(--dim);letter-spacing:.04em}
+  ol,ul{margin:0;padding-left:1.15em}
+  li{margin:1.5px 0}
+  code,.k{font-family:var(--mono);background:var(--code);border-radius:4px;padding:0.5px 4px;
+    font-size:.93em;word-break:break-all;color:#3a2a12}
+  .big{grid-area:hdr;background:var(--slate);color:var(--ivory);border:none;flex-direction:row;
+    align-items:center;gap:16px}
+  .big .t{font-family:var(--serif);font-size:clamp(15px,1.9vw,26px);line-height:1.05;letter-spacing:-.01em}
+  .big .t small{display:block;font-family:var(--mono);font-size:clamp(8px,0.8vw,10.5px);
+    letter-spacing:.14em;text-transform:uppercase;color:#b9b3a4;margin-top:4px;-webkit-text-fill-color:#b9b3a4}
+  .badges{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+  .badge{font-family:var(--mono);font-size:clamp(7.5px,0.72vw,9.5px);border:1px solid #44484f;border-radius:999px;
+    padding:3px 8px;color:#cfc9ba;white-space:nowrap}
+  .badge b{color:var(--clay2);font-weight:600}
+  .kill{grid-area:kill;background:#2a1411;border-color:#4a211a}
+  .kill h2{color:var(--clay2)} .kill, .kill li{color:#f0ddd4} .kill code{background:#3a201a;color:#ffd9cc}
+  .prereq{grid-area:prereq} .setup{grid-area:setup} .fixes{grid-area:fixes}
+  .hijack{grid-area:hijack;border-color:var(--clay);border-width:1.5px}
+  .imgup{grid-area:imgup} .npm{grid-area:npm} .pickle{grid-area:pickle}
+  .step{counter-reset:none}
+  .lead{color:var(--dim);margin-bottom:4px}
+  .ok{color:var(--olive);font-weight:600}
+  .warn{color:var(--clay)}
+  b.hot{color:var(--clay)}
+  .url{font-family:var(--mono);color:#1f5fa6;word-break:break-all}
+  .fix{margin-top:4px;padding-top:4px;border-top:1px dashed var(--edge);color:var(--olive)}
+  /* Short/windowed laptop panels (e.g. 1366×768, windowed 16:10): fits one full 16:9
+     projector screen, but rather than SILENTLY clip a step on a short window, let it
+     scroll. */
+  @media (max-height:760px){ body{overflow:auto} .sheet{height:auto;min-height:100dvh} }
+  @media (max-width:1400px){ .badge{padding:2px 6px} .badges{gap:5px} }
+  @media (max-aspect-ratio:1/1){ body{overflow:auto} .sheet{height:auto;width:100vw;
+    grid-template-columns:1fr;grid-template-rows:none;
+    grid-template-areas:"hdr""kill""prereq""setup""fixes""hijack""imgup""npm""pickle";} }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="cell big">
+    <div class="t">Operator Run-of-Show<small>They're Coming For You First · v2 demo lab · agent-attack-lab</small></div>
+    <div class="badges">
+      <span class="badge">inference <b>native Ollama (GPU)</b></span>
+      <span class="badge">:5000 AirPlay → <b>:5001</b></span>
+      <span class="badge">listener <b>ncat</b> (not BSD nc)</span>
+      <span class="badge">model <b>qwen2.5:7b-instruct</b></span>
+    </div>
+  </div>
+
+  <div class="cell kill">
+    <h2>✕ KILL · end of talk</h2>
+    <ol>
+      <li><code>cd stage &amp;&amp; ./down.sh</code></li>
+      <li>One command removes all five containers + the <code>attacklab</code> network.</li>
+      <li class="warn">Services are <code>restart:unless-stopped</code> — Ctrl-C won't stop them; only <code>./down.sh</code> does.</li>
+    </ol>
+  </div>
+
+  <div class="cell prereq">
+    <h2>1 · Prerequisites</h2>
+    <ul>
+      <li>Apple-Silicon Mac, Docker Desktop running, compose v2.</li>
+      <li>Native Ollama up + model pulled:<br><code>ollama list</code> → <code>qwen2.5:7b-instruct</code>.</li>
+      <li>Containers reach it at <code>host.docker.internal:11434</code> (composes set <code>host-gateway</code>).</li>
+      <li>No vision model needed (image drop uses OCR).</li>
+    </ul>
+  </div>
+
+  <div class="cell setup">
+    <h2>2 · Launch <span class="tag">well before stage</span></h2>
+    <ol>
+      <li><code>cd stage &amp;&amp; ./up.sh</code> — builds images, starts the 5 named containers, clears the npm victim, and <b class="hot">warms + pins</b> the model (<code>keep_alive=-1</code>, no cold start).</li>
+      <li><code>./status.sh</code> — re-check anytime; <span class="ok">all ✓</span> = ready.</li>
+      <li>They appear grouped as <b>agent-attack-lab</b> in Docker Desktop and <b>stay visible</b> (no <code>--rm</code>).</li>
+    </ol>
+  </div>
+
+  <div class="cell fixes">
+    <h2>3 · Handled for you</h2>
+    <ul>
+      <li><b>Port :5000</b> (AirPlay) avoided → pickle on <code>:5001</code>.</li>
+      <li><b>BSD nc</b> replaced by an <code>ncat</code> listener container.</li>
+      <li><b>Model tag</b> pinned &amp; warmed so the first answer is instant.</li>
+      <li>Everything offline after <code>up.sh</code> (pre-built).</li>
+    </ul>
+  </div>
+
+  <div class="cell hijack">
+    <h2>DEMO A · Agent hijack — chat + image drop <span class="tag">headline · deterministic</span></h2>
+    <ol>
+      <li>Open <span class="url">http://localhost:8080</span> (header dot green = model ready).</li>
+      <li>Type “summarize this screenshot”, <b class="hot">drag <code>agent-chat/poisoned_onboarding.png</code></b> onto the box, Send.</li>
+      <li>Watch in order: <code>text extracted from image</code> → <span class="warn">⚠ agent action · run_command</span> → <code>command output: PWNED from the IMAGE as root@…</code> → innocent summary. Red banner fires: <span class="warn">SHELL EXECUTED FROM IMAGE</span>.</li>
+      <li>Line: “a command sitting in a picture is still a command.” Re-send → identical (temp 0, seed 42).</li>
+    </ol>
+  </div>
+
+  <div class="cell imgup">
+    <h2>A · how the shell works + vision upgrade</h2>
+    <ul>
+      <li>Server OCRs the PNG (<code>tesseract</code>) → feeds the text to the agent → <code>run_command()</code> runs it <b>server-side in the container</b> (never the host).</li>
+      <li>Default payload = a visible <code>echo PWNED</code>. For a real drop, bake a reverse shell into the image text → it dials <code>demo-listener</code>.</li>
+      <li class="fix">Optional “the model truly SEES it”: on host <code>ollama pull qwen2.5vl:7b</code>, send the image to the vision model. Less deterministic — <b>pre-record</b>, don't run cold.</li>
+    </ul>
+  </div>
+
+  <div class="cell npm">
+    <h2>DEMO B · npm supply-chain exfil <span class="tag">realistic · safe · local</span></h2>
+    <ol>
+      <li>Open the attacker inbox: <span class="url">http://localhost:9000</span> (empty).</li>
+      <li>Fire the install: <code>docker exec demo-npm-victim npm install</code></li>
+      <li>The <code>postinstall</code> hook harvests planted <b>fake</b> secrets (npm token, AWS keys, SSH key, wallet seed, CI env) and beacons them — a card <b class="hot">pops into the inbox live</b>.</li>
+      <li>Say: real Shai-Hulud / ethers-provider2 mechanism; here it never leaves Docker.</li>
+    </ol>
+    <div class="fix">FIX: <code>docker exec demo-npm-victim npm install --ignore-scripts</code> → inbox stays empty. Re-run: clear <code>node_modules</code> first.</div>
+  </div>
+
+  <div class="cell pickle">
+    <h2>DEMO C · pickle deserialization RCE <span class="tag">reverse shell</span></h2>
+    <ol>
+      <li>Watch shells: <code>docker logs -f demo-listener</code></li>
+      <li>Make payload (targets the listener):<br><code>docker run --rm --network attacklab -e LISTENER_HOST=demo-listener -v "$PWD/../shell-demos/pickle-rce:/w:ro" -w /w python:3.12-slim python make_payload.py</code></li>
+      <li>Send it: <code>curl -s -X POST http://localhost:5001/load --data-urlencode "data=&lt;BASE64&gt;"</code></li>
+      <li>Shell lands as <b class="hot">root</b> in the listener. Interact: <code>docker attach demo-listener</code> (detach <code>Ctrl-P Ctrl-Q</code>).</li>
+    </ol>
+    <div class="fix">FIX: switch the app from <code>pickle.loads</code> to <code>json.loads</code> → same POST fails. SAFETY: all listeners/collector are local; nothing leaves the machine; never on a real network. Stall &gt;15s → cut to the 1080p recording.</div>
+  </div>
+
+</div>
+</body>
+</html>

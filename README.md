@@ -16,10 +16,16 @@ make a system lie and hand over root — **no CVE involved.**
 
 | Path | What's there |
 | --- | --- |
-| [`talk/`](./talk/) | The keynote: narrative arc, full speaker script, slide outline, demo run-of-show. |
+| [`talk/`](./talk/) | The keynote. **v2 is current** — *They're Coming For You First* script + the agent-hijack demo plan; the v1 script and demo notes are kept alongside as backup. |
+| [`docs/final/`](./docs/final/) | **The deliverables:** a self-contained HTML [slide deck](./docs/final/deck.html) and a one-screen HTML [operator run-of-show](./docs/final/howto.html). |
+| [`stage/`](./stage/) | **The demo control plane.** One Compose project (`agent-attack-lab`) + `up.sh`/`status.sh`/`down.sh` that start all demos as persistent, named, Docker-Desktop-visible containers — so only the kill step is left on stage. |
+| [`agent-chat/`](./agent-chat/) | **The v2 headline demo (chat + image drop).** A browser chat where a dropped image hijacks the agent into a shell — OCR → local LLM → `run_command`. Deterministic. |
+| [`agent-hijack-demo/`](./agent-hijack-demo/) | The CLI version of the agent hijack (poisoned document → shell). Simplest to run; good backup. |
+| [`shell-demos/`](./shell-demos/) | The "fundamentals": npm supply-chain (now a realistic **secret harvester → local collector**) and pickle-RCE, each container-only. |
+| [`collector/`](./collector/) | The "attacker inbox" — a safe, local web service that receives and displays the npm exfil beacon. |
 | [`references/`](./references/) | The eight sources behind the talk — seven as archived PDFs, plus the annotated [reading list](./references/reading-list.md). |
-| [`demo/`](./demo/) | The eBPF live-demo lab (container-first, VM alternative). Built around **bad-bpf**. |
-| [`SECURITY.md`](./SECURITY.md) | **Read before running anything in `demo/`.** Scope, limits, and ground rules. |
+| [`demo/`](./demo/) | The eBPF live-demo lab (container-first, VM alternative), from v1. Built around **bad-bpf**. |
+| [`SECURITY.md`](./SECURITY.md) | **Read before running anything.** Scope, limits, and ground rules. |
 
 ## The demo in one line
 
