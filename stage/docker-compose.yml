@@ -23,6 +23,16 @@ services:
     environment:
       - LLM_BASE_URL=http://host.docker.internal:11434/v1
       - LLM_MODEL=${LLM_MODEL:-qwen2.5:7b-instruct}
+      # Planted FAKE secrets — what the image-hijack harvests and exfils to demo-collector.
+      - GITHUB_TOKEN=ghp_FAKEdemo0000000000000000000000000000
+      - NPM_TOKEN=npm_FAKEdemo0000000000000000000000000000
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    volumes:
+      # Planted FAKE credential files at the paths a harvester sweeps (same fixtures as npm).
+      - ../shell-demos/npm-supplychain/fixtures/npmrc:/root/.npmrc:ro
+      - ../shell-demos/npm-supplychain/fixtures/aws-credentials:/root/.aws/credentials:ro
+      - ../shell-demos/npm-supplychain/fixtures/ssh-id_rsa:/root/.ssh/id_rsa:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"   # reach the NATIVE host Ollama (GPU)
     ports:
@@ -53,6 +63,8 @@ services:
   listener:
     build: ./listener
     container_name: demo-listener
+    stdin_open: true          # keep stdin open so `docker attach` can drive the caught shell
+    tty: true                 # allocate a TTY for an interactive reverse shell
     networks: [attacklab]
     restart: unless-stopped
     healthcheck:

